@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Voice Assistant</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #0f172a;
+            color: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h1 {
+            margin-bottom: 10px;
+        }
+        p {
+            color: #94a3b8;
+            margin-bottom: 30px;
+        }
+        #speak-btn {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            padding: 15px 35px;
+            font-size: 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(37, 99, 235, 0.4);
+            transition: background 0.3s;
+        }
+        #speak-btn:hover {
+            background-color: #1d4ed8;
+        }
+        #response-box {
+            margin-top: 30px;
+            width: 80%;
+            max-width: 500px;
+            background-color: #1e293b;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            min-height: 60px;
+            color: #e2e8f0;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>AI Voice Assistant</h1>
+    <p>Click the button and start speaking...</p>
+
+    <button id="speak-btn">🎤 Speak</button>
+
+    <div id="response-box">AI: Tap the button to talk.</div>
+
+    <script>
+        const speakBtn = document.getElementById('speak-btn');
+        const responseBox = document.getElementById('response-box');
+
+        // Check Speech Recognition support
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        
+        if (!SpeechRecognition) {
+            responseBox.innerText = "Speech recognition is not supported in this browser. Please use Google Chrome.";
+        } else {
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-US'; // आप चाहें तो 'hi-IN' भी कर सकते हैं हिंदी के लिए
+            recognition.interimResults = false;
+
+            speakBtn.addEventListener('click', () => {
+                recognition.start();
+                responseBox.innerText = "Listening...";
+            });
+
+            recognition.onresult = async (event) => {
+                const speechText = event.results[0][0].transcript;
+                responseBox.innerText = `You: "${speechText}"\nThinking...`;
+
+                try {
+                    // Backend par request bhejna
+                    const res = await fetch('/ask', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ prompt: speechText })
+                    });
+
+                    const data = await res.json();
+                    responseBox.innerText = `AI: ${data.response}`;
+
+                    // Text to Speech (AI ki awaz)
+                    const speech = new SpeechSynthesisUtterance(data.response);
+                    window.speechSynthesis.speak(speech);
+
+                } catch (error) {
+                    responseBox.innerText = "AI: Error: Connection error.";
+                }
+            };
+
+            recognition.onerror = (event) => {
+                responseBox.innerText = "Error occurred in recognition: " + event.error;
+            };
+        }
+    </script>
+</body>
+</html>
